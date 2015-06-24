@@ -1,0 +1,210 @@
+# Implementation for BN prior #
+
+Prior is used as a alternative way for BN to estimate distribution given data. Prior is background knowledge in the absence of data, which is useful when data is limited.
+
+Learning parameters from training data is to maximize the "log" likelihood of the dataset.That is, we treat the parameters as a set of unknown value. However, if we consider Bayesian framework, then parameters are from specific distribution. We would maximize the value of distribution. Here, Prior would be helpful when estimating the distribution, which is shown below.
+```
+           Posterior = likelihood * Prior
+```
+
+
+For the purpose of simplicity, we would like the conjugate distribution which has the same formula for prior and posterior.
+
+The implementation for prior is shown below:
+
+### [Bnode](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/BNode.java) ###
+
+In Bnod, we should implement,
+```
+   // get the condition data given the condition (parent value) index in the enum table 
+   public List<Sample> getConditionDataset(int conditionIndex);
+
+   // get a new, empty distribution used in this Bnode (e.g. CPT return a new empty enum distribution)
+   public Distrib getlikelihoodDistrib(); 
+```
+
+### [Prior](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/Prior.java) ###
+
+In prior, we should implement all method. Prior example [DirichletDistribPrior](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/DirichletDistribPrior.java)
+[GammaDistribPrior](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/GammaDistribPrior.java)
+[GuassianDistribPrior](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/GaussianDistribPrior.java)
+can be found in bn.prior.
+
+```
+	/**
+	 * distribution can learn from the data
+	 * and change its own parameters
+	 * this is a process from prior to posterior
+	 * @param data
+	 */
+	public void learn(Object[] data, double[] prob);
+	
+	/**
+	 * set likelihood distribution
+	 * @param distrib
+	 */
+	public void setEstimatedDistrib(Distrib distrib);
+	
+	/**
+	 * get the MAP result distribution
+	 * @return
+	 */
+	public Distrib getEstimatedDistrib();
+	
+	/**
+	 * reset the parameters to the initial value
+	 * used in EM
+	 */
+	public void resetParameters();
+	/**
+	 * This is the interface to learn prior parameters
+	 * from raw dataset
+	 * @param data raw data
+	 * @param prob count for that data
+	 */
+	public void learnPrior(Object[] data, double[] prob);
+```
+
+### [PriorBode](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/PriorBNode.java) ###
+
+PriorBNode is a decoration for Bnode. Demo can be found in [PriorExample](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/PriorExample.java) in bn.prior.
+
+Simple Example:
+```
+    EnumVariable sun = Predef.Boolean("Sunrise");
+
+    CPT cpt = new CPT(sun); // normal Bnode
+
+    PriorBNode priorNode = new PriorBNode(cpt);  // pass the Bnode into PriorBnode
+
+    DirichletDistribPrior betaDistrib = ...// get prior distribution
+
+    priorNode.setPrior(betaDistrib); // set Bnode for a root node
+
+    EnumVariable rain = Predef.Boolean("rain");
+    
+    CPT cpt2 = new CPT(rain, sun);
+    PriorBNode priorNode2 = new PriorBNode(cpt2);
+    // prior for sun rise. 90% it won't rain
+    DirichletDistribPrior sunRiseBetaDistrib = new DirichletDistribPrior(rain.getDomain(), new double[] {0.1,0.9}, 1);
+    // prior for sun not rise. 60% it will rain
+    DirichletDistribPrior sunNotRiseBetaDistrib = new DirichletDistribPrior(rain.getDomain(), new double[] {0.6,0.4}, 1);
+    DirichletDistribPrior uni = new DirichletDistribPrior(rain.getDomain(), new double[] {1, 1}, 1);
+    //set the uniform distribution, used when there is no prior privoded for some condition
+    priorNode2.setUniformPrior(uni);
+    /**
+      * Node that when set prior, the order of parent value should 
+      * be the same as the one used in constructor of CPTPrior
+    */
+    priorNode2.setPrior(new Object[] {true}, sunRiseBetaDistrib);
+```
+
+### [MixDirichletManager](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/MixDirichletManager.java) ###
+
+MixDirichletManager is used for loading and saving parameters of trained Dirichlet or mixed Dirichlet distribution. It is easy to use. Examples below:
+
+```
+      Enumerable domain = Enumerable.aacid;  //create the domain for the Dirichlet model  you want to load
+      MixDirichletPrior prior = MixDirichletManager.load(domain, "path/to/xml/file"); // loaded! it's done.
+      MixDirichletManager.save(piror, "path/to/targeted/file");  // saved!
+```
+
+## XML Structure ##
+This is an example xml structure for a mixture Dirichlet model with 2 components
+Each "model" tag represents a component.  <br />
+Each "weight" represents coefficient for each component in the mixture model     <br />
+Each "distrib"  represents the alpha values for each dirichlet distribution component <br />
+```
+<MixtureModels>
+    <model>
+        <weight>0.4</weight>
+        <distrib>2.6,2.081,2.10,2.10,7.722</distrib>
+    </model>
+    <model>
+        <weight>0.6</weight>
+        <distrib>3.45,2.45,1.23,4.44,5.12</distrib>
+    </model>
+<MixtureModels>
+```
+
+### Core Idea in [PriorBNode](https://code.google.com/p/bnkit/source/browse/trunk/bnkit/src/bn/prior/PriorBNode.java) ###
+
+How can PriorBNode handle all kinds of Prior. The important idea is in the method "maximizeInstance". If you really look into class PriorBNode, you will find that all other methods are just a "wrapper" for BNode. Let's look into this method. <br />
+
+In BNode, we have a priorTable, which is a enumTable. It is the same as the "table" in CPT. The priorTable takes the parents' value (or the index) and returns the corresponding "prior". In this way, we can easily get both distribution and prior given parents' value.
+
+In the maximizeInstance, we first calculate the number of combination of parents' value.
+```
+         // get the number of condition that this Bnode has
+	List<EnumVariable> parents = getParents();
+	int conditionNum = 1;
+	if(!isRoot()) {
+		for(EnumVariable parent: parents) {
+			conditionNum *= parent.getDomain().size();
+		}
+	}
+```
+
+In the next step, let's go through each parents' value index and for each value, we do the same thing.
+
+For each parents' value, we have
+
+```
+       // i is the index
+       int index = i;
+       if(isRoot()) {
+	      index = -1;
+	}
+	// get condition data
+	List<Sample> samples = this.getConditionDataset(index);
+	// convert the format
+	Object[] data = new Object[samples.size()];
+	double[] prob = new double[samples.size()];
+	int count = 0;
+	for(Sample sample: samples) {
+		data[count] = sample.instance;
+		prob[count] = sample.prob;
+		count ++;
+	}
+```
+
+We just get the training data for this condition.
+
+Further, we get prior for this condition.
+
+```
+        // get corresponding prior
+	Prior prior = null;
+	if(isRoot()) {
+		prior = this.rootPrior;
+	} else {
+		prior = PriorTable.getValue(i);
+	}
+	// if there is no prior for that condition, we use
+	// user-defined uniform prior
+	if(prior == null) {
+		prior = uniformPrior;
+		if(prior == null) {
+			throw new RuntimeException("cannot find any unifor Prior for this node");
+		}
+	}
+```
+
+In the PriorBNode, we can set prior for specific condition, or set a global prior which is useful when no prior is set.
+
+Finally, we feed the data we get in the previous step into the prior
+
+```
+       // prior start to learn from data
+	prior.setEstimatedDistrib(getlikelihoodDistrib());
+	prior.learn(data, prob);
+	if(!isRoot()) {
+		put(i,prior.getEstimatedDistrib());
+	} else {
+		put(prior.getEstimatedDistrib());
+	}
+	// reset parameters
+	prior.resetParameters();
+```
+
+In this way, we have all our nodes trained with prior.

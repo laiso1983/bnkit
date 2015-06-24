@@ -1,0 +1,28 @@
+# Introduction #
+
+This page documents ideas and observations that could lead to improvements.
+
+
+# Details #
+
+List of issues, ideas for improvements
+
+  * Tied nodes, where multiple nodes may refer to the same parameters. This should be a generic node type that should work for any existing, parameterised node type.
+
+  * EM currently has two alternative strategies for determining expected values of latent variables, both leading to the same values. The choice of which strategy to use is currently set via a variable (EM\_OPTION). The choice will in some cases have significant implications for computational efficiency. The most efficient choice is determined by a variety of factors, including number of (latent) nodes, number of parents of nodes, etc. It would be convenient if EM can choose which strategy to use overall or even for each individual sample--since these factors are often tied to characteristics of an individual sample.
+
+  * Initialisation and randomisation of nodes can be informed by the available training data. Currently, that is not the case, and this leads to severe problems if for instance Gaussian densities are off (e.g. mean is 0 and variance is 1, when actual observations have a mean of 1000 and a variance of 100). Potentially, a new method for initialisation of parameters can be added to the BNode interface.
+
+  * Bayesian learning can consider prior probabilities of variables. These can come in the form of conjugate priors such as the beta or Dirichlet family, or as pseudo-counts. Such priors can help in situations where specific observations are scarce.
+
+  * Implement message passing (loopy belief propagation) as an alternative inference algorithm to support efficient inference in larger networks.
+
+  * The efficiency of variable elimination (class CGVarElim) is very sensitive to the order in which variables are factorised and multiplied. There are some general heuristics which are currently used but many optimisations can be researched and implemented, e.g. dynamic programming can find the optimal ordering from individual factor sizes.
+
+  * Factor is responsible for representing and manipulating factor tables, that are used heavily in variable elimination. Factor uses EnumTable as its main data structure. While access by key is relatively efficient, the current implementation of factor product, needs to "join" existing factors, and is somewhat wasteful. The principal problem is that a join needs to match and construct "keys" for every entry. Hypothetically, by organising the variables in canonical order, this operation can be streamlined.
+
+  * There are only a small set of node types currently.  It is possible to develop vector nodes, that are similar to real nodes (GDT) in that they must have enumerable parents, but take a series of real values. The advantage to multiple GDTs is that it would be possible to parameterise dependencies between positions in the same vector. (There is now a Dirichlet node which works similar to this.)
+
+  * On the issue of new node types, there is a need for specialised node types that have meta-parameters. For example, substitution nodes that model the rate of substitution of symbols via a continuous time Markov process (CTMP; see Carlson et al. DOI: 10.1371/journal.pcbi.1000225). When modelling phylogenetic trees, the parameters of such nodes can be "tied", and/or learned using EM.
+
+  * While there is a graphical user interface, it lacks in functionality. In particular, it is useful to have a quick and easy way to amend a network structure, inspect and change parameters of nodes, perform inference of one or more nodes based on evidence set on other nodes, visualise the results of inference in graphically, load data sets, allow a user to inspect the inference results based on such data, and train parameters based on loaded data.
