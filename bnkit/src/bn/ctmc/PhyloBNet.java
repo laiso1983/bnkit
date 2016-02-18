@@ -226,8 +226,8 @@ public class PhyloBNet {
         Set<BNode> purgedAlready = new HashSet<>();
         for (BNode node : nodes) {
             SubstNode snode = (SubstNode)node; //Cast to subst node
-//            if (node.getInstance() == null && !bn.hasChildren(node)) { // here's a leaf node which is not instantiated
-            if (snode.getGap() && !bn.hasChildren(node)) { // here's a leaf node which is not instantiated
+            if (node.getInstance() == null && !bn.hasChildren(node)) { // here's a leaf node which is not instantiated
+//            if (snode.getGap() && !bn.hasChildren(node)) { // here's a leaf node which is not instantiated
                 purgedAlready.add(node);
                 purgeMe(node, purgedAlready);
             }
@@ -288,7 +288,8 @@ public class PhyloBNet {
                     topNode = true;
                 else
                     topNode = (siblings.size() > 0); // the parent has siblings, so we do not need to look above
-                if (topNode && parent.getGap()) { //only collapse if the parent is recorded as being a gap
+//                if (topNode && parent.getGap()) { //only collapse if the parent is recorded as being a gap
+                if (topNode) { //only collapse if the parent is recorded as being a gap
                     // we have established that "parent" is at the top level to collapse/remove
                     toBePurged.add(parent);
                     // we need to remember details because we are going to create a replacement node
