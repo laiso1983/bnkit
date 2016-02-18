@@ -22,7 +22,7 @@ import json.JSONObject;
 /**
  * Created by aesseb on 08-Feb-16.
  */
-public class ASR_package {
+public class ASR {
 
     private PhyloTree tree;
     private PhyloBNet pbn; //only to be used for navigating branches
@@ -39,7 +39,7 @@ public class ASR_package {
     private double sampled_rate = // sampled rate, copy from a previous 1.0-rate run
             0.15599004226404184;
 
-    public ASR_package(String file_tree, String file_aln, String inference) {
+    public ASR(String file_tree, String file_aln, String inference) {
         loadData(file_tree, file_aln);
         createNetworks();
         if (inference.equals("Joint")) {
@@ -54,7 +54,7 @@ public class ASR_package {
         }
     }
 
-    public ASR_package(String file_tree, String file_aln, String inference, String nodeLabel) {
+    public ASR(String file_tree, String file_aln, String inference, String nodeLabel) {
         loadData(file_tree, file_aln);
         createNetworks();
         if (inference.equals("Joint")) {
