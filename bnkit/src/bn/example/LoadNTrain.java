@@ -38,3 +38,5 @@ public class LoadNTrain {
 	}
 
 }
+
+//"bnkit/data/1420676232637cg.new" "bnkit/data/FD4UNR-50000.txt"
