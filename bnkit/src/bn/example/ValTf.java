@@ -40,75 +40,76 @@ public class ValTf {
         // add data file into data folder
         String filename = args[0];
         //FIXME change input of distributions to semi-colon separated list?
-        int peakColumns = Integer.parseInt(args[1]); //Used to figure out which columns belong to which distribution
+        int segments = Integer.parseInt(args[1]); //Used to figure out which columns belong to which distribution
         int kmerColumns = Integer.parseInt(args[2]);
 
         int ncluster = Integer.parseInt(args[3]);
+        int ecluster = 10;
 
-        int[][] data = loadData(filename);
+//        int[][] data = loadData(filename);
 
         BNet bn = new BNet();
+
         EnumVariable Cluster = Predef.Number(ncluster, "Cluster");
-        //Require Enumerable to create distribution variable
-        Enumerable peaks = new Enumerable(peakColumns);
-        Variable Peaks = Predef.Distrib(peaks, "Peaks");
-
-        Enumerable kmers = new Enumerable(kmerColumns);
-        Variable Kmers = Predef.Distrib(kmers, "Kmers");
-
         CPT cluster = new CPT(Cluster);
-        DirDT peak = new DirDT(Peaks, Cluster);
-        DirDT kmer = new DirDT(Kmers, Cluster);
-        bn.add(cluster, peak, kmer);
+
+        EnumVariable EpiSig = Predef.Number(ecluster, "EpiSignal");
+        CPT epiSig = new CPT(EpiSig);
+
+//        //Can be included later...
+//        EnumVariable CellType = Predef.Nominal(new String[]{"CT1", "CT2", "CT3", "CT4"}, "CellType");
+
+        //Require Enumerable to create distribution variable
+        Enumerable tf = new Enumerable(segments);
+        Variable TF = Predef.Distrib(tf, "TFNode");
+        DirDT tfN = new DirDT(TF, Cluster, EpiSig);
+
+        Enumerable h3k9ac = new Enumerable(segments);
+        Variable H3K9AC = Predef.Distrib(h3k9ac, "h3k9ac");
+        DirDT h3k9acN = new DirDT(H3K9AC, EpiSig);
+
+        Enumerable h3k36me3 = new Enumerable(segments);
+        Variable H3K36ME3 = Predef.Distrib(h3k36me3, "h3k36me3");
+        DirDT h3k36me3N = new DirDT(H3K36ME3, EpiSig);
+
+        Enumerable h3k27me3 = new Enumerable(segments);
+        Variable H3K27ME3 = Predef.Distrib(h3k27me3, "h3k27me3");
+        DirDT h3k27me3N = new DirDT(H3K27ME3, EpiSig);
+
+        Enumerable h3k4me3 = new Enumerable(segments);
+        Variable H3K4ME3 = Predef.Distrib(h3k4me3, "h3k4me3");
+        DirDT h3k4me3N = new DirDT(H3K4ME3, EpiSig);
+
+        Enumerable h3k4me1 = new Enumerable(segments);
+        Variable H3K4ME1 = Predef.Distrib(h3k4me1, "h3k4me1");
+        DirDT h3k4me1N = new DirDT(H3K4ME1, EpiSig);
+
+        Enumerable h3k9me3 = new Enumerable(segments);
+        Variable H3K9ME3 = Predef.Distrib(h3k9me3, "h3k9me3");
+        DirDT h3k9me3N = new DirDT(H3K9ME3, EpiSig);
+
+        Enumerable h3k27ac = new Enumerable(segments);
+        Variable H3K27AC = Predef.Distrib(h3k27ac, "h3k27ac");
+        DirDT h3k27acN = new DirDT(H3K27AC, EpiSig);
+
+        bn.add(cluster, tfN, epiSig, h3k27acN, h3k27me3N, h3k36me3N, h3k4me1N, h3k4me3N, h3k9acN, h3k9me3N);
         List<BNode> nodes = bn.getAlphabetical();
 
-        Object[][] nData = load(filename, nodes);
+        Object[][] data = load(filename, nodes);
 
-
-        int N = data.length;
-        //FIXME: need a way of identifying nodes that contain data to set 2nd dimension of data
-        //add some sort of tag/identifier?
-        Variable[] vars = {Kmers, Peaks};
-        Object[][] data_for_EM = new Object[N][vars.length]; //number of dirichlet or non-latent nodes
-        int nseg = 0;
-
-//        List<BNode> nodes = bn.getAlphabetical();
-        for (int i = 0; i < N; i ++) {
-            if (i == 0)
-                nseg = data[i].length;
-            else if (nseg != data[i].length)
-                throw new RuntimeException("Error in data: invalid item at data point " + (i + 1));
-            int j = 0;
-            int end = 0;
-            //FIXME: need a way of identifying nodes that contain data
-            for (Variable v : vars) {
-                Object a = v.getDomain();
-                try{
-                    EnumDistrib ed = (EnumDistrib)a;
-                    int size = ed.getDomain().size();
-                    int[] d = Arrays.copyOfRange(data[i], end, end + size);
-                    data_for_EM[i][j] = new IntegerSeq(d);
-
-                    end += size;
-                    j++;
-
-//            		System.out.println();
-                } catch (ClassCastException e) {
-                    //FIXME - handle CPTs or GDTs
-//            		data_for_EM[i][j] = data[i][j];
-//            		j++;
-//            		System.out.println();
-                }
-//            	System.out.println();
-            }
-        }
+        Variable[] vars = {TF, H3K27AC, H3K27ME3, H3K36ME3, H3K4ME1, H3K4ME3, H3K9AC, H3K9ME3};
 
         EM em = new EM(bn);
-        em.train(data_for_EM, vars, seed);
+        em.train(data, vars, seed);
 //        cluster.print();
 //        peak.print();
         BNBuf.save(bn, filename + ".xml");
 
+
+        int N = data.length;
+
+        Object[][] data_for_EM = new Object[N][vars.length]; //number of dirichlet or non-latent nodes
+        int nseg = 0;
 
         List[] bins = new ArrayList[ncluster];
         for (int i = 0; i < ncluster; i++)
@@ -156,40 +157,7 @@ public class ValTf {
                 ex.printStackTrace();
             }
         }
-
     }
 
-    public static int[][] loadData(String filename) {
-        BufferedReader br = null;
-        int[][] data = null;
-        try {
-            br = new BufferedReader(new FileReader(filename));
-            String line = br.readLine();
-            List<int[]> alldata = new ArrayList<>();
-            while (line != null) {
-                String[] tokens = line.split("\t");
-                int[] values = new int[tokens.length];
-                try {
-                    for (int i = 0; i < tokens.length; i ++) {
-                        values[i] = Integer.valueOf(tokens[i]);
-                    }
-                    alldata.add(values);
-                } catch (NumberFormatException ex2) {
-                    System.err.println("Ignored: " + line);
-                }
-                line = br.readLine();
-            }
-            data = new int[alldata.size()][];
-            for (int k = 0; k < data.length; k ++) {
-                data[k] = new int[alldata.get(k).length];
-                for (int j = 0; j < data[k].length; j ++)
-                    data[k][j] = alldata.get(k)[j];
-            }
-            br.close();
-        } catch (IOException ex) {
-            Logger.getLogger(DirichletDistrib.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return data;
-    }
 
 }

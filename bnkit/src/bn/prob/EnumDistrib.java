@@ -166,12 +166,28 @@ public class EnumDistrib implements Distrib, Domain {
         return sbuf.toString();
     }
 
+    public static EnumDistrib parseEnumDistrib(String str, EnumDistrib dom) {
+        String[] parts = str.split(",");
+        if (parts.length != dom.domain.size())
+            throw new RuntimeException("Invalid specification of distribution: " + str);
+        double[] values = new double[parts.length];
+        
+        for (int i = 0; i < values.length; i ++) {
+            try {
+                values[i] = Double.valueOf(parts[i]);
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid parameter for distribution: " + parts[i] + " in " + str);
+            }
+        }
+        return new EnumDistrib(dom.domain, values);
+    }
+
     public static EnumDistrib parseEnumDistrib(String str, Enumerable dom) {
         String[] parts = str.split(",");
         if (parts.length != dom.size())
             throw new RuntimeException("Invalid specification of distribution: " + str);
         double[] values = new double[parts.length];
-        
+
         for (int i = 0; i < values.length; i ++) {
             try {
                 values[i] = Double.valueOf(parts[i]);

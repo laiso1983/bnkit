@@ -228,7 +228,8 @@ public class Predef {
                         return y;
                     }   break;
                 case "Distrib":
-                    EnumDistrib d = EnumDistrib.parseEnumDistrib(vstr, (Enumerable)var.getDomain());
+//                    EnumDistrib d = EnumDistrib.parseEnumDistrib(vstr, (Enumerable)var.getDomain());
+                    EnumDistrib d = EnumDistrib.parseEnumDistrib(vstr,(EnumDistrib)var.getDomain());
                     if (var.getDomain().isValid(d)) {
                         return d;
                     }   break;
