@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static bn.file.DataBuf.load;
+
 /**
  * Created by aesseb on 17-Mar-16.
  */
@@ -32,6 +34,8 @@ public class ValTf {
     public static void main(String[] args) {
 
         long seed = 1;
+        //Arguments
+        //datafile, colPeaks, colKmer, clusters,
 
         // add data file into data folder
         String filename = args[0];
@@ -44,36 +48,22 @@ public class ValTf {
         int[][] data = loadData(filename);
 
         BNet bn = new BNet();
-        EnumVariable Cluster;
-        Enumerable peaks;
-        Variable Peaks;
-        Enumerable kmers;
-        Variable Kmers;
+        EnumVariable Cluster = Predef.Number(ncluster, "Cluster");
+        //Require Enumerable to create distribution variable
+        Enumerable peaks = new Enumerable(peakColumns);
+        Variable Peaks = Predef.Distrib(peaks, "Peaks");
 
-        // Define nodes (connecting the variables into an acyclic graph, i.e. the structure)
-        CPT cluster;
-        DirDT peak;
-        DirDT kmer;
+        Enumerable kmers = new Enumerable(kmerColumns);
+        Variable Kmers = Predef.Distrib(kmers, "Kmers");
 
-        if (args.length > 5) {
-            bn = BNBuf.load(args[0]);
-            cluster = (CPT)bn.getNode("Cluster");
-            Cluster = cluster.getVariable();
-            peak = (DirDT)bn.getNode("Peaks");
-            Peaks = peak.getVariable();
-            kmer = (DirDT)bn.getNode("Kmers");
-            Kmers = kmer.getVariable();
-        } else {
-            Cluster = Predef.Number(ncluster, "Cluster");
-            peaks = new Enumerable(peakColumns);
-            Peaks = Predef.Distrib(peaks, "Peaks");
-            kmers = new Enumerable(kmerColumns);
-            Kmers = Predef.Distrib(kmers, "Kmers");
-            cluster = new CPT(Cluster);
-            peak = new DirDT(Peaks,    Cluster);
-            kmer = new DirDT(Kmers, Cluster);
-            bn.add(cluster, peak, kmer);
-        }
+        CPT cluster = new CPT(Cluster);
+        DirDT peak = new DirDT(Peaks, Cluster);
+        DirDT kmer = new DirDT(Kmers, Cluster);
+        bn.add(cluster, peak, kmer);
+        List<BNode> nodes = bn.getAlphabetical();
+
+        Object[][] nData = load(filename, nodes);
+
 
         int N = data.length;
         //FIXME: need a way of identifying nodes that contain data to set 2nd dimension of data
@@ -82,7 +72,7 @@ public class ValTf {
         Object[][] data_for_EM = new Object[N][vars.length]; //number of dirichlet or non-latent nodes
         int nseg = 0;
 
-        List<BNode> nodes = bn.getAlphabetical();
+//        List<BNode> nodes = bn.getAlphabetical();
         for (int i = 0; i < N; i ++) {
             if (i == 0)
                 nseg = data[i].length;
