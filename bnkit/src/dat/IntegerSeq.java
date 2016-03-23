@@ -18,6 +18,8 @@
 
 package dat;
 
+import bn.prob.EnumDistrib;
+
 /**
  * Domain definition for a real vector--a sequence of continuous elements. 
  * For checking validity of values for variables that belong to this domain.
@@ -77,5 +79,23 @@ public class IntegerSeq extends SeqDomain<Continuous> {
             arr[i] = hist[i];
         is.set(arr);
         return is;
+    }
+
+    //To handle loading data for DirDT nodes where an IntegerSeq and not a
+    //EnumDistrib is required
+    public static IntegerSeq parseIntegerSeq(String str, EnumDistrib dom) {
+        String[] parts = str.split("\\|");
+        if (parts.length != dom.getDomain().size())
+            throw new RuntimeException("Invalid specification of distribution: " + str);
+        int[] values = new int[parts.length];
+
+        for (int i = 0; i < values.length; i ++) {
+            try {
+                values[i] = Integer.valueOf(parts[i]);
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid parameter for distribution: " + parts[i] + " in " + str);
+            }
+        }
+        return new IntegerSeq(values);
     }
 }
