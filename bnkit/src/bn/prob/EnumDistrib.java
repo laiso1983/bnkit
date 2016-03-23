@@ -20,6 +20,8 @@ package bn.prob;
 import bn.Distrib;
 import dat.Domain;
 import dat.Enumerable;
+import dat.IntegerSeq;
+
 import java.util.Map;
 import java.util.Random;
 
@@ -381,7 +383,16 @@ public class EnumDistrib implements Distrib, Domain {
             EnumDistrib x = (EnumDistrib) value;
             return true;
         } catch (ClassCastException e) {
-            return false;
+            //In the case of DirDT node, when this isValid is called from
+            //Predef.getObject(), because DirDTs are set as Distrib nodes, DataBuf.load will
+            //try and create a new distribution rather than creating an IntegerSeq which is
+            //required for DirDT
+            try {
+                IntegerSeq i = (IntegerSeq) value;
+                return true;
+            } catch (ClassCastException e1) {
+                return false;
+            }
         }
     }
 
