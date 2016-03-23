@@ -25,10 +25,8 @@ import bn.node.CPT;
 import bn.node.CPTPseudo;
 import bn.node.DirDT;
 import bn.node.GDT;
-import dat.Continuous;
-import dat.EnumVariable;
-import dat.Variable;
-import dat.Enumerable;
+import dat.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -228,11 +226,20 @@ public class Predef {
                         return y;
                     }   break;
                 case "Distrib":
-//                    EnumDistrib d = EnumDistrib.parseEnumDistrib(vstr, (Enumerable)var.getDomain());
-                    EnumDistrib d = EnumDistrib.parseEnumDistrib(vstr,(EnumDistrib)var.getDomain());
-                    if (var.getDomain().isValid(d)) {
-                        return d;
-                    }   break;
+                    if (vstr.contains(",")){
+                        EnumDistrib d = EnumDistrib.parseEnumDistrib(vstr,(EnumDistrib)var.getDomain());
+                        if (var.getDomain().isValid(d)) {
+                            return d;
+                        }   break;
+                    //In the case of DirDT node which falls under "Distrib", an EnumDistrib is not suitable
+                    //when loading data - an IntegerSeq is instead required as handled in the following code
+                    } else if (vstr.contains("|")) {
+                        IntegerSeq iseq = IntegerSeq.parseIntegerSeq(vstr, (EnumDistrib)var.getDomain());
+                        if (var.getDomain().isValid(iseq)) {
+                            return iseq;
+                        }   break;
+                    }
+
             }
         } catch (NumberFormatException e) {
             return null;
