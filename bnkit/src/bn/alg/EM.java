@@ -166,6 +166,8 @@ public class EM extends LearningAlg {
         
         boolean EM_TERMINATE = false;
 
+        System.out.println("\u001B[32m" + "\n\nStarting training" + "\u001B[0m");
+
         // start training (keep going until convergence or stop criterion is met)
         while (round < EM_MAX_ROUNDS && !EM_TERMINATE) {
             round++;

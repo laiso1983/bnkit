@@ -24,7 +24,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import bn.*;
 
@@ -97,9 +99,13 @@ public class DataBuf {
      * @return all values in their native format [row][field]
      */
     public static Object[][] load(String filename, Variable[] vars, boolean hasHeader) {
+        System.out.println("\u001B[32m" + "Loading data" + "\u001B[0m");
         File file = new File(filename);
         int nvars_list = vars.length;
         int nvars_file = -1;
+        //To record which variables from the data set are actually recorded as containing data
+        Set<Variable> usedVars = new HashSet<>();
+        Set<Variable> unusedVars = new HashSet<>();
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             int[] field_index = new int[vars.length];
@@ -140,12 +146,15 @@ public class DataBuf {
                             Variable var = vars[i];
                             if (field_index[i] == -1) {
                                 values[i] = null;
+                                unusedVars.add(var);
                             } else {
                                 String vstr = words[field_index[i]];
                                 if (vstr.equalsIgnoreCase("null") || vstr.equalsIgnoreCase("nil") || vstr.equals("-")) {
                                     values[i] = null;
+                                    unusedVars.add(var);
                                 } else {
                                     values[i] = Predef.getObject(var, vstr);
+                                    usedVars.add(var);
                                     if (values[i] == null) {
                                         throw new RuntimeException("Invalid value in \"" + line + "\" (field " + (i + 1) + " for variable " + var.getName() + " of type " + var.getPredef() + ")");
                                     }
@@ -163,6 +172,15 @@ public class DataBuf {
                         all[row][col] = values[col];
                     }
                 }
+                System.out.println("\u001B[31m" + "Variables that contained no data" + "\u001B[0m");
+                for (Variable v : unusedVars) {
+                    System.out.print(v.getName() + ",");
+                }
+                System.out.println("\u001B[31m" + "\nVariables containing data used in training" + "\u001B[0m");
+                for (Variable v : usedVars) {
+                    System.out.print(v.getName() + ",");
+                }
+
                 return all;
             } catch (IOException e) {
                 e.printStackTrace();
