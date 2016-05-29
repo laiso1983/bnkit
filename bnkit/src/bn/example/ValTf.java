@@ -10,6 +10,7 @@ import bn.alg.VarElim;
 import bn.file.BNBuf;
 import bn.node.CPT;
 import bn.node.DirDT;
+import bn.node.GDT;
 import bn.prob.EnumDistrib;
 import dat.EnumVariable;
 import dat.Enumerable;
@@ -41,74 +42,207 @@ public class ValTf {
 
 //        int[][] data = loadData(filename);
 
-        BNet bn = new BNet();
 
-        EnumVariable Cluster = Predef.Number(ncluster, "Cluster");
-        CPT cluster = new CPT(Cluster);
 
-        EnumVariable EpiSig = Predef.Number(ecluster, "EpiSignal");
-        CPT epiSig = new CPT(EpiSig);
+//        EnumVariable Cluster = Predef.Number(ncluster, "Cluster");
+//        CPT cluster = new CPT(Cluster);
+//
+//        EnumVariable EpiSig = Predef.Number(ecluster, "EpiSignal");
+//        CPT epiSig = new CPT(EpiSig);
 
-        EnumVariable enhancer = Predef.Boolean("Enhancer");
-        CPT enh = new CPT(enhancer, EpiSig);
+//        EnumVariable PeakLoc = Predef.Number(ncluster, "PeakLocation");
+//        CPT peakLoc = new CPT(PeakLoc);
+//
+//        EnumVariable enhancer = Predef.Boolean("Enhancer");
+//        CPT enh = new CPT(enhancer, PeakLoc);
+//
+//        EnumVariable promoter = Predef.Boolean("Promoter");
+//        CPT pro = new CPT(promoter, PeakLoc);
+//
+//        EnumVariable repressive = Predef.Boolean("Repressive");
+//        CPT rep = new CPT(repressive, PeakLoc);
+//
+//        Variable Distance = Predef.Real("Distance");
+//        GDT dis = new GDT(Distance, enhancer, promoter, repressive);
+//
+////        //Can be included later...
+////        EnumVariable CellType = Predef.Nominal(new String[]{"CT1", "CT2", "CT3", "CT4"}, "CellType");
+//
+//        //Require Enumerable to create distribution variable
+//        Enumerable tf = new Enumerable(segments);
+//        Variable TF = Predef.Distrib(tf, "TFNode");
+//        DirDT tfN = new DirDT(TF, PeakLoc);
+//
+//        Enumerable h3k9ac = new Enumerable(segments);
+//        Variable H3K9AC = Predef.Distrib(h3k9ac, "h3k9ac");
+//        DirDT h3k9acN = new DirDT(H3K9AC, enhancer,promoter);
+//
+//        Enumerable h3k36me3 = new Enumerable(segments);
+//        Variable H3K36ME3 = Predef.Distrib(h3k36me3, "h3k36me3");
+//        DirDT h3k36me3N = new DirDT(H3K36ME3, PeakLoc);
+//
+//        Enumerable h3k27me3 = new Enumerable(segments);
+//        Variable H3K27ME3 = Predef.Distrib(h3k27me3, "h3k27me3");
+//        DirDT h3k27me3N = new DirDT(H3K27ME3,repressive);
+//
+//        Enumerable h3k4me3 = new Enumerable(segments);
+//        Variable H3K4ME3 = Predef.Distrib(h3k4me3, "h3k4me3");
+//        DirDT h3k4me3N = new DirDT(H3K4ME3, promoter);
+//
+//        Enumerable h3k4me1 = new Enumerable(segments);
+//        Variable H3K4ME1 = Predef.Distrib(h3k4me1, "h3k4me1");
+//        DirDT h3k4me1N = new DirDT(H3K4ME1, enhancer);
+//
+//        Enumerable h3k9me3 = new Enumerable(segments);
+//        Variable H3K9ME3 = Predef.Distrib(h3k9me3, "h3k9me3");
+//        DirDT h3k9me3N = new DirDT(H3K9ME3,repressive);
+//
+//        Enumerable h3k27ac = new Enumerable(segments);
+//        Variable H3K27AC = Predef.Distrib(h3k27ac, "h3k27ac");
+//        DirDT h3k27acN = new DirDT(H3K27AC, enhancer,promoter);
+//
+//        bn.add(tfN, peakLoc, enh,pro,rep, dis, h3k27acN, h3k27me3N, h3k36me3N, h3k4me1N, h3k4me3N, h3k9acN, h3k9me3N);
+//        List<BNode> nodes = bn.getAlphabetical();
+//
+//        Variable[] vars = new Variable[nodes.size()];
+//        for (int i = 0; i < vars.length; i++) {
+//            vars[i] = nodes.get(i).getVariable();
+//        }
+//        BNBuf.save(bn, "160408_valTF_eh_distance_pwm.xml");
 
-        EnumVariable promoter = Predef.Boolean("Promoter");
-        CPT pro = new CPT(promoter, EpiSig);
 
-        EnumVariable repressive = Predef.Boolean("Repressive");
-        CPT rep = new CPT(repressive, EpiSig);
 
-//        //Can be included later...
-//        EnumVariable CellType = Predef.Nominal(new String[]{"CT1", "CT2", "CT3", "CT4"}, "CellType");
+//        CPT peakLoc;
+//        for (int pl = 2; pl < 10; pl++) {
+//            EnumVariable PeakLoc = Predef.Number(pl, "PeakLocation");
+//            peakLoc = new CPT(PeakLoc);
+//            for (int e = 2; e < 7; e++) {
+//                EnumVariable enhancer = Predef.Number(3, "Enhancer");
+//                CPT enh = new CPT(enhancer, PeakLoc);
+//                for (int r = 2; r < 7; r++) {
+//                    EnumVariable repressive = Predef.Number(r, "Repressive");
+//                    CPT rep = new CPT(repressive, PeakLoc);
+//                    for (int p = 2; p < 7; p++) {
+//                        EnumVariable promoter = Predef.Number(2, "Promoter");
+//                        CPT pro = new CPT(promoter, PeakLoc);
+//
+////                        //Can be included later...
+////                        EnumVariable CellType = Predef.Nominal(new String[]{"CT1", "CT2", "CT3", "CT4"}, "CellType");
+////                        Variable Distance = Predef.Real("Distance");
+////                        GDT dis = new GDT(Distance, enhancer, promoter, repressive);
+//
+//                        //Require Enumerable to create distribution variable
+//                        EnumVariable TF = Predef.Boolean("TFNode");
+//                        CPT tfN = new CPT(TF, PeakLoc);
+//
+//                        EnumVariable H3K9AC = Predef.Boolean("H3K9ac");
+//                        CPT h3k9acN = new CPT(H3K9AC, enhancer,promoter);
+//
+//                        EnumVariable H3K36ME3 = Predef.Boolean("H3K36me3");
+//                        CPT h3k36me3N = new CPT(H3K36ME3, PeakLoc);
+//
+//                        EnumVariable H3K27ME3 = Predef.Boolean("H3K27me3");
+//                        CPT h3k27me3N = new CPT(H3K27ME3,repressive);
+//
+//                        EnumVariable H3K4ME3 = Predef.Boolean("H3K4me3");
+//                        CPT h3k4me3N = new CPT(H3K4ME3, promoter);
+//
+//                        EnumVariable H3K4ME1 = Predef.Boolean("H3K4me1");
+//                        CPT h3k4me1N = new CPT(H3K4ME1, enhancer);
+//
+//                        EnumVariable H3K9ME3 = Predef.Boolean("H3K9me3");
+//                        CPT h3k9me3N = new CPT(H3K9ME3,repressive);
+//
+//                        EnumVariable H3K27AC = Predef.Boolean("H3K27ac");
+//                        CPT h3k27acN = new CPT(H3K27AC, enhancer,promoter);
+//
+//                        EnumVariable DNase = Predef.Boolean("DNase");
+//                        CPT dnase = new CPT(DNase, enhancer,promoter);
+//
+//                        BNet bn = new BNet();
+//
+//                        bn.add(tfN, peakLoc, enh,pro,rep,h3k27acN, dnase, h3k27me3N, h3k36me3N, h3k4me1N, h3k4me3N, h3k9acN, h3k9me3N);
+//                        List<BNode> nodes = bn.getAlphabetical();
+//
+//                        Variable[] vars = new Variable[nodes.size()];
+//                        for (int i = 0; i < vars.length; i++) {
+//                            vars[i] = nodes.get(i).getVariable();
+//                        }
+//                        BNBuf.save(bn, "bnkit/data/160509_valTF_eh_bool_testParams_"+pl+"."+e+"."+r+"."+p+".xml");
+//                    }
+//                }
+//            }
+//        }
 
-        //Require Enumerable to create distribution variable
-        Enumerable tf = new Enumerable(segments);
-        Variable TF = Predef.Distrib(tf, "TFNode");
-        DirDT tfN = new DirDT(TF, Cluster, EpiSig);
 
-        Enumerable h3k9ac = new Enumerable(segments);
-        Variable H3K9AC = Predef.Distrib(h3k9ac, "h3k9ac");
-        DirDT h3k9acN = new DirDT(H3K9AC, enhancer, promoter);
+        CPT peakLoc;
+        for (int pl = 2; pl < 81; pl++) {
+            EnumVariable PeakLoc = Predef.Number(pl, "PeakLocation");
+            peakLoc = new CPT(PeakLoc);
 
-        Enumerable h3k36me3 = new Enumerable(segments);
-        Variable H3K36ME3 = Predef.Distrib(h3k36me3, "h3k36me3");
-        DirDT h3k36me3N = new DirDT(H3K36ME3, EpiSig);
+//            //Can be included later...
+//            EnumVariable CellType = Predef.Nominal(new String[]{"CT1", "CT2", "CT3", "CT4"}, "CellType");
+//            Variable Distance = Predef.Real("Distance");
+//            GDT dis = new GDT(Distance, enhancer, promoter, repressive);
 
-        Enumerable h3k27me3 = new Enumerable(segments);
-        Variable H3K27ME3 = Predef.Distrib(h3k27me3, "h3k27me3");
-        DirDT h3k27me3N = new DirDT(H3K27ME3,repressive);
+            //Require Enumerable to create distribution variable
+            EnumVariable TF = Predef.Boolean("TFNode");
+            CPT tfN = new CPT(TF, PeakLoc);
 
-        Enumerable h3k4me3 = new Enumerable(segments);
-        Variable H3K4ME3 = Predef.Distrib(h3k4me3, "h3k4me3");
-        DirDT h3k4me3N = new DirDT(H3K4ME3, promoter);
+            EnumVariable H3K9AC = Predef.Boolean("H3K9ac");
+            CPT h3k9acN = new CPT(H3K9AC, PeakLoc);
 
-        Enumerable h3k4me1 = new Enumerable(segments);
-        Variable H3K4ME1 = Predef.Distrib(h3k4me1, "h3k4me1");
-        DirDT h3k4me1N = new DirDT(H3K4ME1, enhancer);
+            EnumVariable H3K36ME3 = Predef.Boolean("H3K36me3");
+            CPT h3k36me3N = new CPT(H3K36ME3, PeakLoc);
 
-        Enumerable h3k9me3 = new Enumerable(segments);
-        Variable H3K9ME3 = Predef.Distrib(h3k9me3, "h3k9me3");
-        DirDT h3k9me3N = new DirDT(H3K9ME3, repressive);
+            EnumVariable H3K27ME3 = Predef.Boolean("H3K27me3");
+            CPT h3k27me3N = new CPT(H3K27ME3,PeakLoc);
 
-        Enumerable h3k27ac = new Enumerable(segments);
-        Variable H3K27AC = Predef.Distrib(h3k27ac, "h3k27ac");
-        DirDT h3k27acN = new DirDT(H3K27AC, enhancer, promoter);
+            EnumVariable H3K4ME3 = Predef.Boolean("H3K4me3");
+            CPT h3k4me3N = new CPT(H3K4ME3, PeakLoc);
 
-        bn.add(cluster, tfN, epiSig, enh, pro, rep, h3k27acN, h3k27me3N, h3k36me3N, h3k4me1N, h3k4me3N, h3k9acN, h3k9me3N);
-        List<BNode> nodes = bn.getAlphabetical();
+            EnumVariable H3K4ME1 = Predef.Boolean("H3K4me1");
+            CPT h3k4me1N = new CPT(H3K4ME1, PeakLoc);
 
-        Variable[] vars = new Variable[nodes.size()];
-        for (int i = 0; i < vars.length; i++) {
-            vars[i] = nodes.get(i).getVariable();
+            EnumVariable H3K9ME3 = Predef.Boolean("H3K9me3");
+            CPT h3k9me3N = new CPT(H3K9ME3,PeakLoc);
+
+            EnumVariable H3K27AC = Predef.Boolean("H3K27ac");
+            CPT h3k27acN = new CPT(H3K27AC, PeakLoc);
+
+            EnumVariable DNase = Predef.Boolean("DNase");
+            CPT dnase = new CPT(DNase, PeakLoc);
+
+            BNet bn = new BNet();
+
+            bn.add(tfN, peakLoc, h3k27acN, dnase, h3k27me3N, h3k36me3N, h3k4me1N, h3k4me3N, h3k9acN, h3k9me3N);
+            List<BNode> nodes = bn.getAlphabetical();
+
+            Variable[] vars = new Variable[nodes.size()];
+            for (int i = 0; i < vars.length; i++) {
+                vars[i] = nodes.get(i).getVariable();
+            }
+            BNBuf.save(bn, "bnkit/data/160511_valTF_single_bool_testParams_"+pl+".xml");
         }
 
-        Object[][] data = load(filename, nodes);
 
-        EM em = new EM(bn);
-        em.train(data, nodes);
-        BNBuf.save(bn, filename + ".xml");
 
-        int N = data.length;
+
+
+
+
+
+
+
+
+
+//        Object[][] data = load(filename, nodes);
+//
+//        EM em = new EM(bn);
+//        em.train(data, nodes);
+//        BNBuf.save(bn, filename + ".xml");
+//
+//        int N = data.length;
 
 //        Object[][] data_for_EM = new Object[N][vars.length]; //number of dirichlet or non-latent nodes
 //        int nseg = 0;
