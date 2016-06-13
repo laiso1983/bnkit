@@ -126,6 +126,14 @@ public class CPTPseudo extends CPT{
     }
 
     /**
+     * Set the pseudo matrix
+     * @param pseudo
+     */
+    public void setPseudo(PseudoMatrix pseudo){
+        this.pseudoMatrix = pseudo;
+    }
+
+    /**
      * Provide a non-unique string representation of this CPTPseudo.
      */
     @Override
