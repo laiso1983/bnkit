@@ -37,8 +37,7 @@ public class PriorBNode implements BNode {
 	}
 	
 	public PriorBNode(BNode node, Prior uniform) {
-		bNode = node; 
-		uniformPrior = null;
+		bNode = node;
 		rootPrior = null;
 		uniformPrior = uniform;
 		if(!bNode.isRoot()) {
@@ -54,7 +53,7 @@ public class PriorBNode implements BNode {
 		if(isRoot() && prior != null) {
 			rootPrior = prior;
 		}else {
-			System.err.println("This BNode is conditioned on other nodes, need parents speicficed or prior is null");
+			System.err.println("This BNode is conditioned on other nodes, need parents specified or prior is null");
 		}
 	}
 	
@@ -239,7 +238,7 @@ public class PriorBNode implements BNode {
 			if(prior == null) {
 				prior = uniformPrior;
 				if(prior == null) {
-					throw new RuntimeException("cannot find any unifor Prior for this node");
+					throw new RuntimeException("cannot find any uniform Prior for this node");
 				}
 			}
 			// prior start to learn from data
