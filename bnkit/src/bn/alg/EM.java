@@ -34,8 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Implementation of Expectation-Maximization for learning in Bayesian network.
@@ -79,12 +78,12 @@ public class EM extends LearningAlg {
      * specified number of rounds independently of convergence.
      */
     public int EM_MAX_ROUNDS = 1000;
-    
+
     /**
      * EM status print-outs
      */
     public boolean EM_PRINT_STATUS = true;
-    
+
     /**
      * Threads to be used in EM - case 3
      */
@@ -109,13 +108,13 @@ public class EM extends LearningAlg {
     public void setPrintStatus(Boolean status){
         this.EM_PRINT_STATUS = status;
     }
-    
+
     /**
      * Set the threads to be used in EM - case 1
      * @param thread
      */
     public void setThreadCount(int thread) {
-    	this.EM_THREAD_COUNT = thread;
+        this.EM_THREAD_COUNT = thread;
     }
 
     /**
@@ -123,9 +122,9 @@ public class EM extends LearningAlg {
      * @param option
      */
     public void setEMOption(int option){
-    	this.EM_OPTION = (option == 1) ? 
-    			option : 
-    				(option == 2 ? 2 : 3);
+        this.EM_OPTION = (option == 1) ?
+                option :
+                (option == 2 ? 2 : 3);
     }
 
     /**
@@ -148,7 +147,7 @@ public class EM extends LearningAlg {
      */
     @Override
     public void train(Object[][] values, Variable[] vars, long seed) {
-    	int nSample = values.length; // this is how training samples we have
+        int nSample = values.length; // this is how training samples we have
         // we only need to initialize the relevant nodes.
         //	setRandom(seed); // init network CPTs and CDTs
 
@@ -160,10 +159,10 @@ public class EM extends LearningAlg {
 
         // initialize learning parameters
         double[] last_LL = new double[] {-999999, -999999, -999999, -999999, -999999};
-        
+
         int round = 0;
         boolean latentVariablesExist = false;
-        
+
         boolean EM_TERMINATE = false;
 
         System.out.println("\u001B[32m" + "\n\nStarting training" + "\u001B[0m");
@@ -226,112 +225,112 @@ public class EM extends LearningAlg {
                  */
                 inf.instantiate(bn);
                 Variable.Assignment[] evidence = Variable.Assignment.array(vars, values[i]); // the evidence here
-                
+
                 switch (EM_OPTION) {
-                case 1: 
+                    case 1:
 
-                    // Principal way 1: go through each of the BN nodes... pose a query for, and update each...
-                    if (i == 11)
-                        i = 11;
-                    
-                    for (BNode node : update.keySet()) {
+                        // Principal way 1: go through each of the BN nodes... pose a query for, and update each...
+                        if (i == 11)
+                            i = 11;
 
-                        if (node.isTrainable()) {
+                        for (BNode node : update.keySet()) {
 
-                            // identify what variables that we need to infer, to generate expectations
-                            List<Variable> query_vars = new ArrayList<>();
-                            Object[] evid_key = null; // only applicable if the node has parents
-                            if (!node.isRoot()) {
-                                evid_key = EnumTable.getKey(node.getParents(), evidence);
-                                // add to the variables that must be queried during inference
-                                for (int key_index = 0; key_index < evid_key.length; key_index++) {
-                                    if (evid_key[key_index] == null) {
-                                        query_vars.add(node.getParents().get(key_index));
-                                    }
-                                }
-                            }
-                            Variable var = node.getVariable();
-                            Object ovalue = node.getInstance(); // check the value, if instantiated
-                            if (ovalue == null) {
-                                query_vars.add(var);
-                            }
+                            if (node.isTrainable()) {
 
-                            // check if inference is required
-                            if (query_vars.size() > 0) { // there are unspecified/latent variables for this node
-                                try {
-                                    latentVariablesExist = true;
-                                    Variable[] query_arr = new Variable[query_vars.size()];
-                                    query_vars.toArray(query_arr);
-                                    Query q = inf.makeQuery(query_arr);
-                                    CGTable qr = (CGTable) inf.infer(q);
-                                    int[] indices = qr.getIndices();
-                                    // for each permutation of the enumerable query variables
-                                    for (int qr_index : indices) {
-                                        Object[] qr_key = qr.getKey(qr_index);
-                                        double p = qr.getFactor(qr_index);
-                                        if (p == 0 || Double.isNaN(p)) // count is zero (or the log prob was so small that conversion failed)
-                                            continue;
-                                        JDF jdf = null;
-                                        if (qr.hasNonEnumVariables()) {
-                                            jdf = qr.getJDF(qr_index);
-                                        }
-
-                                        if (!node.isRoot()) { // if node has parents
-                                            // we need to construct a key for the update of the node
-                                            // first, put in the result from the inference, but in the order of the node's parents
-                                            Variable.Assignment[] expected = Variable.Assignment.array(qr.getEnumVariables(), qr_key);
-                                            Object[] inf_key = EnumTable.getKey(node.getParents(), expected);
-                                            // second, overlay the evidence
-                                            EnumTable.overlay(evid_key, inf_key);
-                                            if (ovalue != null) {
-                                                node.countInstance(evid_key, ovalue, p);
-                                            } else { // we don't know the value so use expected value
-                                                try {
-                                                    EnumVariable evar = (EnumVariable) var;
-                                                    for (Variable.Assignment assigned : expected) {
-                                                        if (assigned.var.equals(evar)) {
-                                                            node.countInstance(evid_key, assigned.val, p);
-                                                            break;
-                                                        }
-                                                    }
-                                                } catch (ClassCastException e) {
-                                                    // we think it is a continuous variable, so we should have a distrib for it
-                                                    Distrib d = jdf.getDistrib(var);
-                                                    node.countInstance(evid_key, d, p);
-                                                }
-                                            }
-                                        } else { // node IS root
-                                            if (ovalue != null) {
-                                                node.countInstance(null, ovalue, p);
-                                            } else { // we don't know the value so use expected value
-                                                try {
-                                                    EnumVariable evar = (EnumVariable) var;
-                                                    Variable.Assignment[] expected = Variable.Assignment.array(qr.getEnumVariables(), qr_key);
-                                                    for (Variable.Assignment assigned : expected) {
-                                                        if (assigned.var.equals(evar)) {
-                                                            node.countInstance(null, assigned.val, p);
-                                                            break;
-                                                        }
-                                                    }
-                                                } catch (ClassCastException e) {
-                                                    // we think it is a continuous variable, but it is a root node!
-                                                    throw new EMRuntimeException("Failed query for sample #" + (i + 1) + ": " + var.getName() + " is a non-enumerable root node");
-                                                }
-                                            }
+                                // identify what variables that we need to infer, to generate expectations
+                                List<Variable> query_vars = new ArrayList<>();
+                                Object[] evid_key = null; // only applicable if the node has parents
+                                if (!node.isRoot()) {
+                                    evid_key = EnumTable.getKey(node.getParents(), evidence);
+                                    // add to the variables that must be queried during inference
+                                    for (int key_index = 0; key_index < evid_key.length; key_index++) {
+                                        if (evid_key[key_index] == null) {
+                                            query_vars.add(node.getParents().get(key_index));
                                         }
                                     }
-                                } catch (RuntimeException e) {
-                                    throw new EMRuntimeException("Failed query for sample #" + (i + 1) + " and node " + node.getName() + ": " + e.getLocalizedMessage());
                                 }
-                            } else { // all variables are instantiated, no need to do inference
-                                node.countInstance(evid_key, ovalue);
+                                Variable var = node.getVariable();
+                                Object ovalue = node.getInstance(); // check the value, if instantiated
+                                if (ovalue == null) {
+                                    query_vars.add(var);
+                                }
+
+                                // check if inference is required
+                                if (query_vars.size() > 0) { // there are unspecified/latent variables for this node
+                                    try {
+                                        latentVariablesExist = true;
+                                        Variable[] query_arr = new Variable[query_vars.size()];
+                                        query_vars.toArray(query_arr);
+                                        Query q = inf.makeQuery(query_arr);
+                                        CGTable qr = (CGTable) inf.infer(q);
+                                        int[] indices = qr.getIndices();
+                                        // for each permutation of the enumerable query variables
+                                        for (int qr_index : indices) {
+                                            Object[] qr_key = qr.getKey(qr_index);
+                                            double p = qr.getFactor(qr_index);
+                                            if (p == 0 || Double.isNaN(p)) // count is zero (or the log prob was so small that conversion failed)
+                                                continue;
+                                            JDF jdf = null;
+                                            if (qr.hasNonEnumVariables()) {
+                                                jdf = qr.getJDF(qr_index);
+                                            }
+
+                                            if (!node.isRoot()) { // if node has parents
+                                                // we need to construct a key for the update of the node
+                                                // first, put in the result from the inference, but in the order of the node's parents
+                                                Variable.Assignment[] expected = Variable.Assignment.array(qr.getEnumVariables(), qr_key);
+                                                Object[] inf_key = EnumTable.getKey(node.getParents(), expected);
+                                                // second, overlay the evidence
+                                                EnumTable.overlay(evid_key, inf_key);
+                                                if (ovalue != null) {
+                                                    node.countInstance(evid_key, ovalue, p);
+                                                } else { // we don't know the value so use expected value
+                                                    try {
+                                                        EnumVariable evar = (EnumVariable) var;
+                                                        for (Variable.Assignment assigned : expected) {
+                                                            if (assigned.var.equals(evar)) {
+                                                                node.countInstance(evid_key, assigned.val, p);
+                                                                break;
+                                                            }
+                                                        }
+                                                    } catch (ClassCastException e) {
+                                                        // we think it is a continuous variable, so we should have a distrib for it
+                                                        Distrib d = jdf.getDistrib(var);
+                                                        node.countInstance(evid_key, d, p);
+                                                    }
+                                                }
+                                            } else { // node IS root
+                                                if (ovalue != null) {
+                                                    node.countInstance(null, ovalue, p);
+                                                } else { // we don't know the value so use expected value
+                                                    try {
+                                                        EnumVariable evar = (EnumVariable) var;
+                                                        Variable.Assignment[] expected = Variable.Assignment.array(qr.getEnumVariables(), qr_key);
+                                                        for (Variable.Assignment assigned : expected) {
+                                                            if (assigned.var.equals(evar)) {
+                                                                node.countInstance(null, assigned.val, p);
+                                                                break;
+                                                            }
+                                                        }
+                                                    } catch (ClassCastException e) {
+                                                        // we think it is a continuous variable, but it is a root node!
+                                                        throw new EMRuntimeException("Failed query for sample #" + (i + 1) + ": " + var.getName() + " is a non-enumerable root node");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } catch (RuntimeException e) {
+                                        throw new EMRuntimeException("Failed query for sample #" + (i + 1) + " and node " + node.getName() + ": " + e.getLocalizedMessage());
+                                    }
+                                } else { // all variables are instantiated, no need to do inference
+                                    node.countInstance(evid_key, ovalue);
+                                }
                             }
                         }
-                    }
 
-                    break; // end EM_OPTION == 1
+                        break; // end EM_OPTION == 1
 
-                case 2:
+                    case 2:
                         // Principal way 2: collect query variables from all (trainable) nodes... pose one query and update all (trainable) nodes
                         Set<Variable> query_vars = new HashSet<>(); // all query variables are stored here
 
@@ -451,16 +450,18 @@ public class EM extends LearningAlg {
 //                		node.getTable().getSize();
                             EMc1 work = new EMc1(node, evidence, i);
                             executor.execute(work);
+
                         }
                         executor.shutdown();
                         while (!executor.isTerminated()) {
                         }
-                        //                        System.out.println("Finished all threads");
-
+//                        if (i%1000 == 0){
+//                            System.out.println("Execution finished for: "+i);
+//                        }
                         break; // end EM_OPTION == 3
-                }                        
+                }
             }
-            
+
             // finally complete the M-step by transferring counts to probabilities
             for (BNode node : update.keySet()) {
                 if (node.isTrainable()) {
@@ -518,7 +519,7 @@ public class EM extends LearningAlg {
                     }
                     double[] sdl_LL = new double[last_LL.length];
                     for (int j = 0; j < last_LL.length; j++) {
-                    	sdl_LL[j] = (last_LL[j] - mean_LL)*(last_LL[j] - mean_LL);
+                        sdl_LL[j] = (last_LL[j] - mean_LL)*(last_LL[j] - mean_LL);
                     }
                     sd_LL = sdl_LL[0] / sdl_LL.length;
                     for (int i = 0; i < last_LL.length - 1; i++) {
@@ -565,7 +566,7 @@ public class EM extends LearningAlg {
             super(message);
         }
     }
-    
+
     /**
      * Runnable 'worker' for case 3 of EM
      * In order for the code to be threaded, the process of the for loop for case 1 had
@@ -595,9 +596,15 @@ public class EM extends LearningAlg {
 //    		System.out.println(Thread.currentThread().getName()+" End.");
         }
 
+        /*
+        Aim: to query each node in parallel rather than serially
+        In case 1, a loop iterates through each node and performs inference. In case 3, this loop is handled
+        by multiple threads to increase speed.
+         */
         public void case3(BNode node, Variable.Assignment[] evidence, int i) {
-
             boolean latentVariablesExist = false;
+
+            //At this stage, all nodes have been instantiated and this instantiation will not change
 
             if (node.isTrainable()) {
 
@@ -625,16 +632,16 @@ public class EM extends LearningAlg {
                         latentVariablesExist = true;
                         Variable[] query_arr = new Variable[query_vars.size()];
                         query_vars.toArray(query_arr); //FIXME NOT THREADSAFE - does inference update these nodes in any way?
-                        Query q = inf.makeQuery(query_arr); 
+                        Query q = inf.makeQuery(query_arr);
                         CGTable qr = (CGTable) inf.infer(q);
                         int[] indices = qr.getIndices();
                         // for each permutation of the enumerable query variables
                         for (int qr_index : indices) {
                             Object[] qr_key = qr.getKey(qr_index);
-                            double p = qr.getFactor(qr_index);
+                            double p = qr.getFactor(qr_index); //FIXME HERE?
                             JDF jdf = null;
                             if (qr.hasNonEnumVariables()) {
-                                jdf = qr.getJDF(qr_index);
+                                jdf = qr.getJDF(qr_index); //FIXME HERE?
                             }
 
                             if (!node.isRoot()) { // if node has parents
@@ -685,7 +692,7 @@ public class EM extends LearningAlg {
                         throw new EMRuntimeException("Failed query for sample #" + (i + 1) + " and node " + node.getName() + ": " + e.getMessage());
                     }
                 } else { // all variables are instantiated, no need to do inference
-                    node.countInstance(evid_key, ovalue);
+                    node.countInstance(evid_key, ovalue); //FIXME - change return here
                 }
             }
         }
