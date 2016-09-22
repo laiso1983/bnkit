@@ -76,7 +76,9 @@ public class TestNetwork {
 			CGTable answer = (CGTable) ve.infer(q);
 			
 			Distrib d = answer.query(testNode.getVariable());
-			double out = d.get(true);
+//			double out = d.get(true);
+			//**********MODIFIED FOR DREAM CHALLENGE*********
+			double out = d.get("B");
 			return out;
 			 
 //			if (testNode.getVariable().getPredef().equals("Boolean")) {
