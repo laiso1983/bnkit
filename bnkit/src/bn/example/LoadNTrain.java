@@ -30,9 +30,20 @@ public class LoadNTrain {
 		List<BNode> nodes = bn.getOrdered();
 		Object[][] data = DataBuf.load(data_file, nodes);
 
-		LearningAlg em = new EM(bn);
+		int maxRounds = 1000;
+		int emCase = 1;
+
+		EM em = new EM(bn);
+		em.setEMOption(emCase);
+		em.setPrintStatus(true);
+		em.setMaxRounds(maxRounds);
+		em.setThreadCount(1);
+		double start = System.currentTimeMillis();
 		em.train(data, nodes);
-		BNBuf.save(bn, bn_file + "2.new");
+		double end = System.currentTimeMillis();
+		double time = end - start;
+		System.out.println("Training time = " + time);
+		BNBuf.save(bn, bn_file + "_trained.new");
 		
 //		TestNetwork tn = new TestNetwork(bn, data, "Variance");
 	}
