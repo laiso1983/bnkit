@@ -101,6 +101,7 @@ public class ValidateBoolean {
 		}
 
 		public void train(Set<Object[]> sample) {
+			System.out.println(sample.size());
 			EM em = new EM(bn);
 			em.setEMOption(emCase);
 			em.setPrintStatus(true);
@@ -124,6 +125,7 @@ public class ValidateBoolean {
 
 		@Override
 		public void train(Map<Object[], String> sample) {
+			System.out.println(sample.size());
 			EM em = new EM(bn);
 			em.setEMOption(emCase);
 			em.setPrintStatus(true);
