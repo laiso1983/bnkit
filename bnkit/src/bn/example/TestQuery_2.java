@@ -28,16 +28,59 @@ public class TestQuery_2 {
     public static PrintWriter writer = null;
 
     public static void main(String[] args) {
+
+        String bn_file;
+        String data_file;
+        String query;
+        String ignore;
+        String setting;
+        String output;
+        String[] cells;
+        Integer repeat;
+        String tf;
+        String data;
+
         if (args.length < 6) {
-            System.out.println("Usage: LoadNTrain <bn-file> <data-file> <query> <ignore> <setting> <output-file>");
+            System.out.println("Usage: LoadNTrain <bn-file> <data-file> <query> <ignore> <setting> <output-file>\n Usage:  LoadNTrain <TF> <cell1,cell2,cell3> <query> <ignore> <setting> <repeat>");
             System.exit(1);
+        } else if (args.length == 6){
+            if (args[2].contains(",") || args[4].equals("InferDistrib")) {
+                tf = args[0];
+                cells = args[1].split(",");
+                query = args[2];
+                ignore = args[3];
+                setting = args[4];
+                repeat = Integer.parseInt(args[5]);
+
+                multiple(tf, cells, query, ignore, setting, repeat);
+            } else {
+                bn_file = args[0];
+                data_file = args[1];
+                query = args[2];
+                ignore = args[3];
+                setting = args[4];
+                output = args[5];
+
+                standard(bn_file, data_file, query, ignore, setting, output);
+            }
+        } else if (args.length == 7){
+            tf = args[0];
+            cells = args[1].split(",");
+            query = args[2];
+            ignore = args[3];
+            setting = args[4];
+            repeat = Integer.parseInt(args[5]);
+            data = args[6];
+
+            specific(tf, cells, query, ignore, setting, repeat, data);
+        } else {
+            System.out.println("Usage: LoadNTrain <bn-file> <data-file> <query> <ignore> <setting> <output-file>");
+            System.out.println("Usage:  LoadNTrain <TF> <cell1,cell2,cell3> <query> <ignore> <setting> <repeat>");
+            System.out.println("Usage:  LoadNTrain <TF> <cell1,cell2,cell3> <query> <ignore> <setting> <repeat> <dataFile>");
         }
-        String bn_file = args[0];
-        String data_file = args[1];
-        String query = args[2];
-        String ignore = args[3];
-        String setting = args[4];
-        String output = args[5];
+    }
+
+    public static void standard(String bn_file, String data_file, String query, String ignore, String setting, String output){
 
         BNet bn = BNBuf.load(bn_file);
         List<BNode> nodes = bn.getOrdered();
@@ -78,13 +121,12 @@ public class TestQuery_2 {
             System.out.println("FileNotFound" + output);
         }
 
-
         if (setting.equals("Infer")) {
             infer(values, vars, bn, qVars, iVars);
         } else if (setting.equals("InferDistrib")) {
             inferDistrib(values, vars, bn, qVars, iVars);
         } else if (setting.equals("MPE")) {
-            MPE(values, vars, bn , qVars, iVars);
+            MPE(values, vars, bn, qVars, iVars);
         } else if (setting.equals("Likelihood")) {
             likeli(values, vars, bn, qVars, iVars);
         } else {
@@ -92,6 +134,147 @@ public class TestQuery_2 {
         }
 
         writer.close();
+    }
+
+    public static void multiple(String tf, String[] cells, String query, String ignore, String setting, Integer repeat) {
+
+        int modelNum = 0;
+        for (int cModel = 0; cModel < cells.length; cModel++) {
+            for (int m = 0; m < repeat; m++){
+                try {
+                    BNet bn = BNBuf.load(tf+"/dream_net_"+tf+"_"+cells[cModel]+"_m"+m+"_n6.out_trained.new");
+                    List<BNode> nodes = bn.getOrdered();
+
+                    String[] queryS = query.split(";");
+                    Variable[] qVars = new Variable[queryS.length];
+                    for (int b = 0; b < queryS.length; b++) {
+                        qVars[b] = (bn.getNode(queryS[b]).getVariable());
+                    }
+
+                    Variable[] iVars = null;
+                    if (ignore.contains("None")) {
+                        System.out.println("Nothing to ignore");
+                    } else {
+                        String[] ignS = ignore.split(";");
+                        iVars = new Variable[ignS.length];
+                        for (int b = 0; b < ignS.length; b++) {
+                            try {
+                                iVars[b] = (bn.getNode(ignS[b]).getVariable());
+                            } catch (NullPointerException npe) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    Variable[] vars = new Variable[nodes.size()];
+                    for (int k = 0; k < nodes.size(); k++) {
+                        vars[k] = nodes.get(k).getVariable();
+                    }
+
+                    int dataNum = 0;
+                    for (int cData = 0; cData < cells.length; cData++) {
+                        for (int r = 0; r < repeat; r++) {
+                            Object[][] values = DataBuf.load(tf + "/" + tf + "_" + cells[cData] + "_training_data_" + r + ".out", nodes);
+
+                            try {
+                                writer = new PrintWriter(tf + "/" + tf + "_training_predictions_m" + modelNum + "_" + dataNum + ".out", "UTF-8");
+                            } catch (UnsupportedEncodingException uee) {
+                                System.out.println("UnsupportedEncodingException");
+                            } catch (FileNotFoundException fnf) {
+                                System.out.println("FileNotFound" + tf + "/" + tf + "_training_predictions_m" + modelNum + "_" + dataNum + ".out");
+                            }
+
+                            if (setting.equals("Infer")) {
+                                infer(values, vars, bn, qVars, iVars);
+                            } else if (setting.equals("InferDistrib")) {
+                                inferDistrib(values, vars, bn, qVars, iVars);
+                            } else if (setting.equals("MPE")) {
+                                MPE(values, vars, bn, qVars, iVars);
+                            } else if (setting.equals("Likelihood")) {
+                                likeli(values, vars, bn, qVars, iVars);
+                            } else {
+                                System.out.println("Invalid setting: must be Infer, MPE or Likelihood");
+                            }
+
+                            writer.close();
+                            dataNum++;
+                        }
+                    }
+                    modelNum++;
+                } catch (Exception e) {
+                    continue;
+                }
+
+            }
+        }
+    }
+
+    public static void specific(String tf, String[] cells, String query, String ignore, String setting, Integer repeat, String data) {
+
+        int modelNum = 0;
+
+        for (int cModel = 0; cModel < cells.length; cModel++) {
+            for (int m = 0; m < repeat; m++){
+                try {
+                    BNet bn = BNBuf.load("X:/DREAM/Training/"+tf+"_trained/dream_net_"+tf+"_"+cells[cModel]+"_m"+m+"_n6.out_trained.new");
+                    List < BNode > nodes = bn.getOrdered();
+
+                    Object[][] values = DataBuf.load(data, nodes);
+
+                    String[] queryS = query.split(";");
+                    Variable[] qVars = new Variable[queryS.length];
+                    for (int b = 0; b < queryS.length; b++) {
+                        qVars[b] = (bn.getNode(queryS[b]).getVariable());
+                    }
+
+                    Variable[] iVars = null;
+                    if (ignore.contains("None")) {
+                        System.out.println("Nothing to ignore");
+                    } else {
+                        String[] ignS = ignore.split(";");
+                        iVars = new Variable[ignS.length];
+                        for (int b = 0; b < ignS.length; b++) {
+                            try {
+                                iVars[b] = (bn.getNode(ignS[b]).getVariable());
+                            } catch (NullPointerException npe) {
+                                continue;
+                            }
+                        }
+                    }
+
+                    Variable[] vars = new Variable[nodes.size()];
+                    for (int k = 0; k < nodes.size(); k++) {
+                        vars[k] = nodes.get(k).getVariable();
+                    }
+
+                    try {
+                        writer = new PrintWriter("X:/DREAM/Training/"+tf+"_trained/" + tf + "_testing_predictions_m" + modelNum + ".out", "UTF-8");
+                    } catch (UnsupportedEncodingException uee) {
+                        System.out.println("UnsupportedEncodingException");
+                    } catch (FileNotFoundException fnf) {
+                        System.out.println("FileNotFound" + tf +"_trained/" + tf + "_testing_predictions_m" + modelNum + ".out");
+                    }
+
+                    if (setting.equals("Infer")) {
+                        infer(values, vars, bn, qVars, iVars);
+                    } else if (setting.equals("InferDistrib")) {
+                        inferDistrib(values, vars, bn, qVars, iVars);
+                    } else if (setting.equals("MPE")) {
+                        MPE(values, vars, bn, qVars, iVars);
+                    } else if (setting.equals("Likelihood")) {
+                        likeli(values, vars, bn, qVars, iVars);
+                    } else {
+                        System.out.println("Invalid setting: must be Infer, MPE or Likelihood");
+                    }
+
+                    writer.close();
+
+                    modelNum++;
+                } catch(Exception e) {
+                    continue;
+                }
+            }
+        }
     }
 
     public static void MPE(Object[][] values, Variable[] vars, BNet bn, Variable[] qVars, Variable[] iVars) {
@@ -474,27 +657,7 @@ public class TestQuery_2 {
             CGTable cg = (CGTable)ve.infer(q);
 
             for (Variable query : qVars) {
-                double a = 0.0;
-                int max = 250;
-
                 EnumDistrib d = (EnumDistrib)cg.query(query);
-                Map<Object, Object> counts = new HashMap<>();
-                while (a < max) {
-                    Object s;
-                    try {
-                        s = d.sample();
-                    } catch (RuntimeException re) {
-                        s = "None";
-                    }
-
-                    if (counts.containsKey(s)) {
-                        Integer count = (Integer)counts.get(s) + 1;
-                        counts.put(s, count);
-                    } else {
-                        counts.put(s, 1);
-                    }
-                    a+=0.5;
-                }
 
                 String builder = "";
 
@@ -506,17 +669,11 @@ public class TestQuery_2 {
                 Object[] states = {"0", "1", "2", "3", "4"};
                 for (int o = 0; o < states.length; o++) {
                     Object state = states[o];
-                    Object res = counts.get(state);
-                    int count;
-                    if (res == null)
-                        count = 1;
-                    else
-                        count = (int)res;
-                        count ++;
+                    Object res = d.get(state);
                     if (o < states.length-1)
-                        builder = builder + count + "|";
+                        builder = builder + res + ",";
                     else
-                        builder = builder + count;
+                        builder = builder + res;
                 }
                 String line = builder.trim();
                 writer.println(line);

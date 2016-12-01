@@ -275,7 +275,7 @@ public class TestQuery_4 {
 
                 double minModel = 1.0;
                 double maxModel = 0.0;
-                for (int m = 3; m < models; m++) {
+                for (int m = 0; m < models; m++) {
                     Object name = "M"+m;
                     double score = (double)store.get(name);
                     if (score < minModel)

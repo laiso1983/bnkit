@@ -30,6 +30,13 @@ public class SVM_sequence {
         String neg = args[1];
         Integer nFold = Integer.parseInt(args[2]);
         Integer spectrum = Integer.parseInt(args[3]);
+        String params = args[4];
+
+        String[] lParams = params.split(",");
+        double[] C = new double[lParams.length];
+        for (int p=0; p<lParams.length; p++) {
+            C[p] = Double.parseDouble(lParams[p]);
+        }
 
         Sequence[] seqsPos = null;
         Sequence[] seqsNeg = null;
@@ -57,7 +64,7 @@ public class SVM_sequence {
         Kernel kernel=new KernelSpectrum(spectrum);
 
         // step 2: create models
-        double[] C={1,1};
+//        double[] C={1000,1000};
         List<DefaultProbSVM<KSequence>> model=new ArrayList<>();
         for (int i=0; i<nFold; i++)
             model.add(new DefaultProbSVM<KSequence>(kernel, C));

@@ -511,7 +511,7 @@ public class TestNetwork {
                     }
                     x++;
                 }
-			}catch (NullPointerException e) {
+			} catch (NullPointerException e) {
 				//		                System.out.println(testVal + "\t" + null + "\t" + nodeValues);
 				//		                System.err.println("Null error");
 //				prediction = -100;
