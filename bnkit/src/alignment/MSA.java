@@ -29,7 +29,7 @@ public class MSA {
     }
 
     public MSA(String filepath, String alignmentType) throws IOException{
-        this(filepath, 0.01, 0.39, 0.011, 0.05, 0.05, new SubstitutionMatrix("blosum62EstimatedWithX"), alignmentType, true, true);
+        this(filepath, 0.01, 0.39, 0.011, 0.05, 0.05, new SubstitutionMatrix("blosum62EstimatedWithX"), alignmentType, false);
     }
 
     /**
@@ -56,7 +56,8 @@ public class MSA {
                 List<Integer> alignment = alignSeqToGraph(seqs.get(seqId).toString(), false, partialOrder, partialOrderTraceback);
 
                 graph.addSequence(seqId, seqs.get(seqId).getName(), seqs.get(seqId).toString(), alignment);
-//                    saveMSA(filepath + seqId);
+                System.out.println(filepath);
+                    saveMSA(filepath + seqId);
                 Map<Character, MutableInt> baseCounts = graph.getCurrentBaseCounts();
             }
 
@@ -75,6 +76,7 @@ public class MSA {
 
     public  void alignMEASequence(int seqId, EnumSeq<Enumerable> seq, boolean partialOrder, boolean partialOrderTraceback){
         List<Integer> alignment = alignSeqToGraph(seq.toString(), true, partialOrder, partialOrderTraceback);
+        System.out.println(alignment);
         graph.addSequence(seqId, seq.getName(), seq.toString(), alignment);
 
 
@@ -82,8 +84,16 @@ public class MSA {
 
     }
 
-    private MSA(String filepath, double tau, double epsilon, double delta, double emissionX, double emissionY, SubstitutionMatrix subMatrix, String type, boolean partialOrder, boolean partialOrderTraceback) throws IOException {
+    private MSA(String filepath, double tau, double epsilon, double delta, double emissionX, double emissionY, SubstitutionMatrix subMatrix, String type, boolean partialOrderTraceback) throws IOException {
         try {
+
+            // Check if the alignment should be partial order
+            boolean partialOrder = false;
+
+            if (type.startsWith("PO")){
+                partialOrder = true;
+            }
+
 
             List<EnumSeq.Gappy<Enumerable>> seqs = getSeqs(filepath);
             POGraph graph = getGraph(seqs);
@@ -94,20 +104,25 @@ public class MSA {
                 System.out.println("Using Partial Order Viterbi alignment");
                 pairHMM.getViterbiAlignment();
 
+
             }
 
             else if (type.equals("Viterbi")){
                 System.out.println("Using Viterbi alignment");
                 pairHMM.getViterbiAlignment();
+
+
             }
 
             else if (type.equals("POMEA")){
                 System.out.println("Using Partial order maximum expected accuracy alignment");
                 pairHMM.getMEAAlignment(1);
+
             }
 
             else if (type.equals("MEA")){
                 System.out.println("Using Maximum expected accuracy alignment");
+
 
 //                pairHMM = new PairHMM(graph, seqs, tau, epsilon, delta, emissionX, emissionY, subMatrix, type, false);
 
@@ -179,7 +194,7 @@ public class MSA {
      *
      * @param filepath file path to save alignment
      */
-    private void saveMSA(String filepath){
+    public void saveMSA(String filepath){
         graph.saveSequences(filepath, "fasta");
     }
 

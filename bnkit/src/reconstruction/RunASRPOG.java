@@ -98,11 +98,15 @@ public class RunASRPOG {
 
 					if (alignmentType.equals("NW")){
 						msa = new MSA(sequencePath);
+						//TODO: Make saving the alignment optional
+						msa.saveMSA(outputPath + "_aligned");
+
 
 					}
 
 					else {
 						msa = new MSA(sequencePath, alignmentType);
+						msa.saveMSA(outputPath + "_aligned");
 
 					}
 					asr = new ASRPOG(msa.getMSAGraph(), treePath, sequencePath, inference.equalsIgnoreCase("joint"), mp);
@@ -130,6 +134,7 @@ public class RunASRPOG {
 					asr.save(outputPath, true, "fasta");
 				else
 					asr.save(outputPath, false, "fasta");
+
 			}
 
 			if (checkBranchIsolation){

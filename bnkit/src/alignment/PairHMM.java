@@ -113,6 +113,9 @@ public class PairHMM {
         }
 
         this.vM[0][0] = Math.log(1);
+        this.vX[0][0] = Math.log(1);
+        this.vY[0][0] = Math.log(1);
+
 
 
     }
@@ -148,6 +151,7 @@ public class PairHMM {
 
         POGraph alignment = calculateViterbiAlignment(graph, 1);
 
+
         return alignment;
 
 
@@ -174,12 +178,6 @@ public class PairHMM {
         }
 
 
-//        System.out.println("VM");
-//        MatrixUtils.printMatrix(vM);
-//        System.out.println("VX");
-//        MatrixUtils.printMatrix(vX);
-//        System.out.println("VY");
-//        MatrixUtils.printMatrix(vY);
 
 
         List<Integer> alignment = traceback();
@@ -248,6 +246,8 @@ public class PairHMM {
 
         Object[] currentTransition = new Object[3];
 
+        //TODO: Check emission probabilities are correct for nodes with multiple characters
+//        double emissionM = 0.50;
         double emissionM = Math.log(getEmission(i, j));
 
         if (partialOrder) {
@@ -332,11 +332,11 @@ public class PairHMM {
         if (currentTransitionXX >= currentTransitionMX) {
             vX[i][j] = currentTransitionXX + Math.log(emissionX);
 
-            tracebackX[i][j] = "X";
+            tracebackX[i][j] = "X" + String.valueOf(j - 1);
 
         } else {
             vX[i][j] = currentTransitionMX + Math.log(emissionX);
-            tracebackX[i][j] = "M";
+            tracebackX[i][j] = "M" + String.valueOf(i - 1);
 
         }
 
@@ -372,11 +372,11 @@ public class PairHMM {
 
         if (currentTransitionYY > currentTransitionMY) {
             vY[i][j] = currentTransitionYY + Math.log(emissionY);
-            tracebackY[i][j] = "Y";
+            tracebackY[i][j] = "Y" + String.valueOf(i - 1);
 
         } else {
             vY[i][j] = currentTransitionMY + Math.log(emissionY);
-            tracebackY[i][j] = "M";
+            tracebackY[i][j] = "M" + String.valueOf(i - 1);
 
         }
 
@@ -1148,10 +1148,10 @@ public class PairHMM {
         int curstrIdx = 0;
         int curnodeIdx = 0;
 
-//        System.out.println("Scores: ");
-//        MatrixUtils.printMatrix(vM);
-//        MatrixUtils.printMatrix(vX);
-//        MatrixUtils.printMatrix(vY);
+        System.out.println("Scores: ");
+        MatrixUtils.printMatrix(vM);
+        MatrixUtils.printMatrix(vX);
+        MatrixUtils.printMatrix(vY);
 //
         System.out.println("Tracebacks: ");
         MatrixUtils.printMatrix(tracebackM);
@@ -1175,13 +1175,13 @@ public class PairHMM {
                 profile1Matches.add(0, -1);
                 profile2Matches.add(0, j - 1);
 
-                lastState = tracebackX[i][j];
+                lastState = tracebackX[i][j].substring(0,1);
                 j--;
             } else {
 
                 profile1Matches.add(0, i - 1);
                 profile2Matches.add(0, -1);
-                lastState = tracebackY[i][j];
+                lastState = tracebackY[i][j].substring(0,1);
                 i--;
             }
 
@@ -1201,13 +1201,13 @@ public class PairHMM {
 //                    seq2Output = "-" + seq2Output;
                     profile1Matches.add(0, i - 1);
                     profile2Matches.add(0, -1);
-                    lastState = tracebackY[i][j];
+                    lastState = tracebackY[i][j].substring(0,1);
                     i--;
                 } else {
 
                     profile1Matches.add(0, -1);
                     profile2Matches.add(0, j - 1);
-                    lastState = tracebackX[i][j];
+                    lastState = tracebackX[i][j].substring(0,1);
                     j--;
                 }
             }
@@ -1248,6 +1248,7 @@ public class PairHMM {
             }
         }
 
+        System.out.println(matchesIndex);
 
         return matchesIndex;
 
@@ -1348,7 +1349,6 @@ public class PairHMM {
         double profile1Count = seqCharMapping.size();
 
         if (profile1Count > 1){
-//            System.out.println("lucky dog");
         }
         double profile2Count = 1;
 
@@ -1371,7 +1371,8 @@ public class PairHMM {
 //        long startTime = System.nanoTime();
 //        System.out.println("Starting to get current base count");
 
-        Map<Character, MutableInt> baseCounts = graph.getCurrentBaseCounts();
+//        Map<Character, MutableInt> baseCounts = graph.getCurrentBaseCounts();
+        Map<Character, Double> baseCounts = graph.getCharacterDistribution();
 
 //        long endTime = System.nanoTime();
 //        long duration = (endTime - startTime);
@@ -1386,7 +1387,7 @@ public class PairHMM {
         Set<Character> baseKeys = baseCounts.keySet();
         for (Character name: baseKeys){
 //            System.out.println(i + " " + j + "****NAMES**** " + name + " matching with " + name2);
-            int profile1Value = baseCounts.get(name).getValue();
+            int profile1Value = baseCounts.get(name).intValue();
 
 
 

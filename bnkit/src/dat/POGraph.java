@@ -1401,7 +1401,10 @@ public class POGraph {
          */
         private Character getBase(){ return base; }
 
-        private Map<Character, MutableInt> getBaseCounts(){ return bases; }
+        private Map<Character, MutableInt> getBaseCounts(){
+                return bases;
+            }
+
 
 
 
