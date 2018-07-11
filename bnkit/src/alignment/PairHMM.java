@@ -1162,6 +1162,8 @@ public class PairHMM {
 
         while ((i > 0) && (j > 0)) {
             if ((vM[i][j] > vX[i][j]) && (vM[i][j] > vY[i][j])) {
+
+
                 profile1Matches.add(0, i - 1);
                 profile2Matches.add(0, j - 1);
 
@@ -1242,11 +1244,15 @@ public class PairHMM {
         for (int k = 0; k < profile1Matches.size(); k++){
 
             if (profile2Matches.get(k) != -1){
+                System.out.println(k);
                 int index = profile1Matches.get(k) == -1 ? -1: orderedNodes.get(profile1Matches.get(k));
                 matchesIndex.add(index);
 
             }
         }
+
+        System.out.println(profile1Matches);
+        System.out.println(profile2Matches);
 
         System.out.println(matchesIndex);
 
